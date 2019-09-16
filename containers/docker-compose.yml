@@ -1,0 +1,19 @@
+version: '3'
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4567-4584:4567-4584"
+      - "8080:8080"
+    environment:
+      - AWS_CBOR_DISABLE=1
+      #- USE_SSL=true
+      # - SERVICES=s3,kinesis,lambda,apigateway
+      - SERVICES=lambda,apigateway
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=docker
+      - DOCKER_HOST:unix:///var/run/docker.sock
+    volumes:
+      - "${PWD}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
