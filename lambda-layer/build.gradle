@@ -3,11 +3,35 @@ plugins {
 }
 
 shadowJar {
+
+    exclude 'koin.properties'
+    exclude 'logback.xml'
+    exclude 'ch/**'
+    exclude 'kotlin*'
+    exclude 'junit/**'
+    exclude 'mozilla/**'
+    exclude 'org/mozilla/**'
+    exclude 'org/hamcrest/**'
+    exclude 'org/jetbrains/**'
+    exclude 'org/json/**'
+    exclude 'org/junit/**'
+    exclude 'org/koin/**'
+    exclude 'org/slf4j/**'
+    exclude 'software/amazon/ion/**'
     minimize()
+
 }
 
 tasks.build.dependsOn tasks.shadowJar
 dependencies {
+
+    api 'com.github.librepdf:openpdf:1.3.1'
+
+    implementation "com.amazonaws:aws-java-sdk-core:$aws_sdk_version"
+    implementation "com.amazonaws:aws-java-sdk-s3:$aws_sdk_version"
+
+    api 'log4j:log4j:1.2.17'
+    api 'commons-logging:commons-logging:1.2'
 
 }
 

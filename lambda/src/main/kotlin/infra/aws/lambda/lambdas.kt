@@ -25,7 +25,12 @@ val lambdaLogger = LogFactory.getLog("infra")
 abstract class LambdaProcessorBase  {
     val projectBasePath = Paths.get("")
     val shaddowJar = projectBasePath.resolve("lambda/build/libs/lambda-1-all.jar")
+    val shaddowLayerJar = projectBasePath.resolve("lambda-layer/build/libs/lambda-layer-1-all.jar")
+    /**
+     * create a IAM role and add permissions then paste role arn here
+     */
     val lambdaRoleARN = "arn:aws:iam::XXXXXXXXX:role/some_iam_role"
+
 
     fun functionCodeAsByteBuffer(jarPath: Path): ByteBuffer {
         val zf = ZipFile(jarPath.toString())
@@ -110,6 +115,17 @@ object LambdaProcessor : LambdaProcessorBase() {
         val createFunctionResult: CreateFunctionResult = lambda.createFunction(request)
         return createFunctionResult.functionArn
     }
+
+    // need to run shadow task in lambda module first
+    fun createFromShadowJarWithLayer(name: String, handlerClassName: String, jarPath: Path, layerArnWithVersion: String ): String {
+        var request = makeFunctionRequest(name, handlerClassName, jarPath)
+        request.withLayers(layerArnWithVersion)
+        val createFunctionResult: CreateFunctionResult = lambda.createFunction(request)
+        return createFunctionResult.functionArn
+    }
+
+
+
     // need to run shadow task in lambda module first
     fun updateFunctionCodeFromShadowJar(name: String, jarPath: Path): String {
         var requestU = UpdateFunctionCodeRequest()
@@ -157,7 +173,8 @@ object LambdaProcessor : LambdaProcessorBase() {
         request.role = lambdaRoleARN
         request.setCode(createFunctionCodeFromShadowJar(jarPath))
         request.setHandler(className)
-
+        request.timeout =29  // api gateway max
+        request.memorySize =256 // avoid timeout
         val funs: ListFunctionsResult = lambda.listFunctions()
         funs.getFunctions().forEach {
             if (it.functionName.equals(name)) {

@@ -9,6 +9,7 @@ shadowJar {
 tasks.build.dependsOn tasks.shadowJar
 
 dependencies {
+    implementation project(':lambda-layer')
     api "com.amazonaws:aws-java-sdk-lambda:$aws_sdk_version"
     implementation "com.amazonaws:aws-lambda-java-core:1.2.0"
     implementation "com.amazonaws:aws-lambda-java-events:2.2.6"

@@ -22,6 +22,7 @@ object GenericCredentialsProvider : AWSCredentialsProvider {
 enum class LocalStackLambdaTestParams(val param: String) {
     LAMBDA_ENDPOINT("http://localhost:4574" ),
     LAMBDA_FUNC_NAME("gatewayProxyTest"),
+    LAMBDA_WITH_LAYER_FUNC_NAME("lambdaReportTest"),
     API_PROXY_VERB("POST"),
     API_STAGE("api_proxy_testing"),
     API_PATH_PART("proxy_test_path" )

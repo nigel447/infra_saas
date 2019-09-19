@@ -1,10 +1,12 @@
 package infra.aws
 
 import com.amazonaws.services.lambda.model.FunctionConfiguration
+import com.amazonaws.services.lambda.model.PublishLayerVersionResult
 import infra.aws.config.LocalStackAPITestParams
 import infra.aws.lambda.LambdaProcessor
 import infra.aws.lambda.LocalStackLambdaTestParams
 import jlambda.ApiGatewayHandler
+import jlambda.GatewayReportHandler
 import org.apache.commons.logging.LogFactory
 
 val appLogger = LogFactory.getLog("infra")
@@ -25,7 +27,7 @@ fun deployHttpApiGateway(isLocalTest: Boolean) {
     appLogger.info("rest_api_id $restApiId")
 
     // set the initial path, every path part is a "resource" and will have an associated id
-    val setUpPathPartRet = ApiGateway.setUpBaseResource(restApiId, LocalStackAPITestParams.API_PATH_PART.param )
+    val setUpPathPartRet = ApiGateway.setUpBaseResource(restApiId, LocalStackAPITestParams.API_PATH_PART.param)
     val resId = setUpPathPartRet.second
     appLogger.info("create-resource  rootResource.id ${setUpPathPartRet.first}  resourceId $resId")
 
@@ -61,13 +63,19 @@ fun deployHttpApiGateway(isLocalTest: Boolean) {
 
     ApiGateway.createDeployment(restApiId, LocalStackAPITestParams.API_STAGE.param)
     appLogger.info("test uri")
-    appLogger.info(makeTestUri(restApiId, LocalStackAPITestParams.API_STAGE.param, LocalStackAPITestParams.API_PATH_PART.param))
+    appLogger.info(
+        makeTestUri(
+            restApiId,
+            LocalStackAPITestParams.API_STAGE.param,
+            LocalStackAPITestParams.API_PATH_PART.param
+        )
+    )
 
 }
 
-private fun makeTestUri(apiId:String, stage:String, path:String) :String {
-  //  https://restApiId.execute-api.us-east-2.amazonaws.com/<stage>/<path>/
-    return  "https://$apiId.execute-api.us-east-2.amazonaws.com/$stage/$path"
+private fun makeTestUri(apiId: String, stage: String, path: String): String {
+    //  https://restApiId.execute-api.us-east-2.amazonaws.com/<stage>/<path>/
+    return "https://$apiId.execute-api.us-east-2.amazonaws.com/$stage/$path"
 
 }
 
@@ -96,7 +104,10 @@ fun deployApiGatewayProxy(isLocalTest: Boolean, config: FunctionConfiguration) {
 
     // create the api
     val createRet =
-        ApiGateway.createApPI(LocalStackAPITestParams.API_LAMBDA_PROXY_NAME.param, "this is a simple test for lambda proxy integration")
+        ApiGateway.createApPI(
+            LocalStackAPITestParams.API_LAMBDA_PROXY_NAME.param,
+            "this is a simple test for lambda proxy integration"
+        )
     val restApiId = createRet.id
     appLogger.info("rest_api_id $restApiId")
 
@@ -105,7 +116,7 @@ fun deployApiGatewayProxy(isLocalTest: Boolean, config: FunctionConfiguration) {
     val resId = setUpPathPartRet.second
     appLogger.info("create-resource  rootResource.id ${setUpPathPartRet.first}  resourceId $resId")
 
-   // ApiGateway.createModel(jsonModelSchema, "testmodel", restApiId)
+    // ApiGateway.createModel(jsonModelSchema, "testmodel", restApiId)
     // set the rest verb for the path
     val setUpApiMethodRet = ApiGateway.setUpApiMethod(
         resId,
@@ -133,12 +144,18 @@ fun deployApiGatewayProxy(isLocalTest: Boolean, config: FunctionConfiguration) {
     //   https://restApiId.execute-api.us-east-2.amazonaws.com/<stage>/<path>/
     ApiGateway.createDeployment(restApiId, LocalStackLambdaTestParams.API_STAGE.param)
     appLogger.info("test uri")
-    appLogger.info(makeTestUri(restApiId, LocalStackLambdaTestParams.API_STAGE.param, LocalStackLambdaTestParams.API_PATH_PART.param))
-
+    appLogger.info(
+        makeTestUri(
+            restApiId,
+            LocalStackLambdaTestParams.API_STAGE.param,
+            LocalStackLambdaTestParams.API_PATH_PART.param
+        )
+    )
 }
 
 
-fun deployLambda(isLocalTest: Boolean) {
+private fun deployLambda(isLocalTest: Boolean) {
+
     LambdaProcessor.bootStrap(isLocalTest)
     appLogger.info("run deploy Lambda")
     val arn = LambdaProcessor.createFromShadowJar(
@@ -154,6 +171,38 @@ fun deployLambdaForProxy(isLocalTest: Boolean): FunctionConfiguration {
     return LambdaProcessor.lambdaConfig(LocalStackLambdaTestParams.LAMBDA_FUNC_NAME.param)
 }
 
+// need to run shadow task in lambda=layer module first
+private fun deployLambdaLayer(): String {
+    appLogger.info("run lambda layer test")
+    val ret: PublishLayerVersionResult = LambdaProcessor.createLayer("reportTestLayer", LambdaProcessor.shaddowLayerJar)
+    return "${ret.layerArn}:${ret.version}"
+}
+
+// currently localstack has no support for layers
+fun deployLambdaWithLayerForProxy(isLocalTest: Boolean ): FunctionConfiguration {
+
+    LambdaProcessor.bootStrap(isLocalTest)
+
+    if(isLocalTest) {
+        appLogger.info("run deploy Lambda")
+        val arn = LambdaProcessor.createFromShadowJar(
+            LocalStackLambdaTestParams.LAMBDA_WITH_LAYER_FUNC_NAME.param,
+            GatewayReportHandler::class.java.getName(),
+            LambdaProcessor.shaddowJar
+        )
+        appLogger.info("deploy Lambda ok function arn=$arn")
+        return LambdaProcessor.lambdaConfig(LocalStackLambdaTestParams.LAMBDA_WITH_LAYER_FUNC_NAME.param)
+
+    } else {
+        val arnWithVersion = deployLambdaLayer()
+        LambdaProcessor.createFromShadowJarWithLayer(LocalStackLambdaTestParams.LAMBDA_WITH_LAYER_FUNC_NAME.param,
+            GatewayReportHandler::class.java.getName(), LambdaProcessor.shaddowJar , arnWithVersion)
+        return LambdaProcessor.lambdaConfig(LocalStackLambdaTestParams.LAMBDA_WITH_LAYER_FUNC_NAME.param)
+    }
+
+
+}
+
 
 /**
  *  true ==> localstack test
@@ -162,12 +211,15 @@ fun deployLambdaForProxy(isLocalTest: Boolean): FunctionConfiguration {
  *    |->  deployLambdaForProxy sets up the lambda function for deployApiGatewayProxy
  */
 fun main() {
-     // deployHttpApiGateway(false)
+    // deployHttpApiGateway(false)
 
-     val fConf = deployLambdaForProxy(false)
+    // localstack not support layers
+    // add the layer after create function code
+    // val fConf = deployLambdaForProxy(true)
+
+    val fConf = deployLambdaWithLayerForProxy(false)
 
      deployApiGatewayProxy(false, fConf)
-
 
 
 }
