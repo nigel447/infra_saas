@@ -3,6 +3,20 @@ plugins {
 }
 
 shadowJar {
+    exclude 'pdfimg/**'
+    exclude 'jlambda/layer/**'
+    exclude 'org/json/**'
+    exclude 'org/junit/**'
+    exclude 'org/slf4j/**'
+    exclude 'com/fasterxml/**'
+    exclude 'com/lowagie/**'
+    exclude 'com/amazonaws/jmx/**'
+    exclude 'software/amazon/ion/**'
+    exclude 'org/slf4j/**'
+    exclude 'infra/**'
+    exclude 'kotlin/**'
+    exclude 'org/jetbrains/**'
+
     minimize()
 }
 
