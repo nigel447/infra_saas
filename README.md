@@ -17,6 +17,14 @@ Test 2 lambda intergration
 <img src="https://github.com/nigel447/infra_saas/blob/master/Summary_lambda.png" width="400">
 
 ### Usage (Video)
-[![Demo](http://img.youtube.com/vi/8Zkuc_3YjNY/0.jpg)](https://www.youtube.com/watch?v=Rpy9Q02U4Gc&t "Demo")
+[![Http Proxy](http://img.youtube.com/vi/ID6P8Z1hDBE/0.jpg)](http://www.youtube.com/watch?v=ID6P8Z1hDBE "Http Proxy")  
+  
+
+[![Lambda Proxy](http://img.youtube.com/vi/MFIUcLhHAVw/0.jpg)](http://www.youtube.com/watch?v=MFIUcLhHAVw "Lambda Proxy")  
+
+
+[![Lambda Layers](http://img.youtube.com/vi/OLIJ7jWu_og/0.jpg)](http://www.youtube.com/watch?v=OLIJ7jWu_og "Lambda Layers")
+
+
 
  
